@@ -15,6 +15,7 @@ using Org.BouncyCastle.X509;
 using System;
 using System.IO;
 using ConfigRoot = CryptoSuite48.Config.CryptoConfig;
+using Org.BouncyCastle.Utilities.IO.Pem; // 確保此引用已存在
 
 namespace CryptoSuite48.KeyManagement.KeyGenerators
 {
@@ -115,7 +116,8 @@ namespace CryptoSuite48.KeyManagement.KeyGenerators
             using (var stringWriter = new StringWriter())
             {
                 var pemWriter = new Org.BouncyCastle.OpenSsl.PemWriter(stringWriter);
-                pemWriter.WriteObject(pkcs8); // 寫入 PKCS#8 物件
+                // 將 PrivateKeyInfo 物件的編碼內容包裝成 PemObject 寫入
+                pemWriter.WriteObject(new PemObject("PRIVATE KEY", pkcs8.GetEncoded()));
                 return stringWriter.ToString();
             }
         }
@@ -130,7 +132,8 @@ namespace CryptoSuite48.KeyManagement.KeyGenerators
             using (var stringWriter = new StringWriter())
             {
                 var pemWriter = new Org.BouncyCastle.OpenSsl.PemWriter(stringWriter);
-                pemWriter.WriteObject(pubInfo); // 寫入 SubjectPublicKeyInfo 物件
+                // 將 SubjectPublicKeyInfo 物件的編碼內容包裝成 PemObject 寫入
+                pemWriter.WriteObject(new PemObject("PUBLIC KEY", pubInfo.GetEncoded()));
                 return stringWriter.ToString();
             }
         }
