@@ -214,20 +214,24 @@ namespace CryptoSuite48.Services
         private byte[] RsaSign(byte[] data, RsaKeyModel keyModel)
         {
             // 1. 使用 Bouncy Castle 載入私鑰
-            AsymmetricCipherKeyPair keyPair;
+            AsymmetricKeyParameter privateKeyParam; // 聲明為 AsymmetricKeyParameter 類型
             using (var stringReader = new StringReader(keyModel.PrivateKey))
             {
                 var pemReader = new PemReader(stringReader);
-                // PemReader.ReadObject() 會返回 AsymmetricCipherKeyPair 或 AsymmetricKeyParameter
-                keyPair = (AsymmetricCipherKeyPair)pemReader.ReadObject();
+                // PemReader.ReadObject() 可能返回 AsymmetricCipherKeyPair 或 PrivateKeyInfo，PemReader 會自動解析為 AsymmetricKeyParameter
+                privateKeyParam = (AsymmetricKeyParameter)pemReader.ReadObject(); // 修改此行
             }
 
             // 2. 取得 RSA 私鑰參數
-            RsaPrivateCrtKeyParameters privateKeyParams = (RsaPrivateCrtKeyParameters)keyPair.Private;
+            // 檢查讀取到的私鑰是否為 RsaPrivateCrtKeyParameters 類型
+            if (!(privateKeyParam is RsaPrivateCrtKeyParameters rsaPrivateKeyParams))
+            {
+                throw new ArgumentException("無效的 RSA 私鑰格式。");
+            }
 
             // 3. 創建簽章器
             ISigner signer = SignerUtilities.GetSigner("SHA256withRSA"); // 使用 SHA256withRSA 簽章演算法
-            signer.Init(true, privateKeyParams); // 初始化簽章器 (true 表示簽章)
+            signer.Init(true, rsaPrivateKeyParams); // 初始化簽章器 (true 表示簽章)
             signer.BlockUpdate(data, 0, data.Length); // 提供要簽章的資料
 
             // 4. 生成簽章
@@ -299,20 +303,24 @@ namespace CryptoSuite48.Services
         private byte[] RsaDecrypt(byte[] encrypted, RsaKeyModel keyModel)
         {
             // 1. 使用 Bouncy Castle 載入私鑰
-            AsymmetricCipherKeyPair keyPair;
+            AsymmetricKeyParameter privateKeyParam; // 聲明為 AsymmetricKeyParameter 類型
             using (var stringReader = new StringReader(keyModel.PrivateKey))
             {
                 var pemReader = new PemReader(stringReader);
-                // PemReader.ReadObject() 通常會返回 AsymmetricCipherKeyPair 或 PrivateKeyInfo
-                keyPair = (AsymmetricCipherKeyPair)pemReader.ReadObject();
+                // PemReader.ReadObject() 可能返回 PrivateKeyInfo，PemReader 會自動解析為 AsymmetricKeyParameter
+                privateKeyParam = (AsymmetricKeyParameter)pemReader.ReadObject();
             }
 
             // 2. 取得 RSA 私鑰參數
-            RsaPrivateCrtKeyParameters privateKeyParams = (RsaPrivateCrtKeyParameters)keyPair.Private;
+            // 檢查讀取到的私鑰是否為 RsaPrivateCrtKeyParameters 類型
+            if (!(privateKeyParam is RsaPrivateCrtKeyParameters rsaPrivateKeyParams))
+            {
+                throw new ArgumentException("無效的 RSA 私鑰格式。");
+            }
 
             // 3. 創建 RSA 解密引擎並應用 PKCS#1 填充
             IAsymmetricBlockCipher cipher = new Pkcs1Encoding(new RsaEngine());
-            cipher.Init(false, privateKeyParams); // 初始化為解密模式 (false 表示解密)
+            cipher.Init(false, rsaPrivateKeyParams); // 初始化為解密模式 (false 表示解密)
 
             // 4. 執行解密
             // RSA 解密後資料長度與金鑰長度相關，通常會得到原始資料
@@ -332,24 +340,29 @@ namespace CryptoSuite48.Services
         private byte[] EccSign(byte[] data, EccKeyModel keyModel)
         {
             // 1. 使用 Bouncy Castle 載入私鑰
-            AsymmetricCipherKeyPair keyPair;
+            AsymmetricKeyParameter privateKeyParams; // 聲明為 AsymmetricKeyParameter 類型
             using (var stringReader = new StringReader(keyModel.PrivateKey))
             {
                 var pemReader = new PemReader(stringReader);
-                // PemReader.ReadObject() 通常會返回 AsymmetricCipherKeyPair 或 PrivateKeyInfo
-                keyPair = (AsymmetricCipherKeyPair)pemReader.ReadObject();
+                // PemReader.ReadObject() 可能返回 AsymmetricCipherKeyPair 或 AsymmetricKeyParameter
+                // 如果它返回的是 PrivateKeyInfo，PemReader 會自動解析並返回對應的 KeyParameter
+                // 因此直接讀取為 AsymmetricKeyParameter 即可
+                privateKeyParams = (AsymmetricKeyParameter)pemReader.ReadObject();
             }
 
-            // 2. 取得 ECC 私鑰參數
-            ECPrivateKeyParameters privateKeyParams = (ECPrivateKeyParameters)keyPair.Private;
+            // 檢查讀取到的私鑰是否為 ECPrivateKeyParameters 類型
+            if (!(privateKeyParams is ECPrivateKeyParameters eccPrivateKeyParams))
+            {
+                throw new ArgumentException("無效的 ECC 私鑰格式。");
+            }
 
-            // 3. 創建簽章器
+            // 2. 創建簽章器
             // "SHA256withECDSA" 表示使用 SHA256 雜湊演算法和 ECDSA 簽章演算法
             ISigner signer = SignerUtilities.GetSigner("SHA256withECDSA");
-            signer.Init(true, privateKeyParams); // 初始化簽章器 (true 表示簽章)
+            signer.Init(true, eccPrivateKeyParams); // 初始化簽章器 (true 表示簽章)
             signer.BlockUpdate(data, 0, data.Length); // 提供要簽章的資料
 
-            // 4. 生成簽章
+            // 3. 生成簽章
             return signer.GenerateSignature();
         }
 

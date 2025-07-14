@@ -116,7 +116,6 @@ namespace CryptoSuite48.KeyManagement.KeyGenerators
             using (var stringWriter = new StringWriter())
             {
                 var pemWriter = new Org.BouncyCastle.OpenSsl.PemWriter(stringWriter);
-                // 將 PrivateKeyInfo 物件的編碼內容包裝成 PemObject 寫入
                 pemWriter.WriteObject(new PemObject("PRIVATE KEY", pkcs8.GetEncoded()));
                 return stringWriter.ToString();
             }
@@ -132,7 +131,6 @@ namespace CryptoSuite48.KeyManagement.KeyGenerators
             using (var stringWriter = new StringWriter())
             {
                 var pemWriter = new Org.BouncyCastle.OpenSsl.PemWriter(stringWriter);
-                // 將 SubjectPublicKeyInfo 物件的編碼內容包裝成 PemObject 寫入
                 pemWriter.WriteObject(new PemObject("PUBLIC KEY", pubInfo.GetEncoded()));
                 return stringWriter.ToString();
             }

@@ -72,13 +72,11 @@ namespace CryptoSuite48.KeyManagement.KeyGenerators
         /// </summary>
         private static string ExportPrivateKeyPem(RsaPrivateCrtKeyParameters privateKeyParams)
         {
-            // 使用 PrivateKeyInfoFactory 建立 PKCS#8 結構
             var pkcs8 = PrivateKeyInfoFactory.CreatePrivateKeyInfo(privateKeyParams);
 
             using (var stringWriter = new StringWriter())
             {
                 var pemWriter = new Org.BouncyCastle.OpenSsl.PemWriter(stringWriter);
-                // 將 PKCS#8 物件的編碼內容包裝成 PemObject 寫入
                 pemWriter.WriteObject(new PemObject("PRIVATE KEY", pkcs8.GetEncoded()));
                 return stringWriter.ToString();
             }
@@ -89,13 +87,11 @@ namespace CryptoSuite48.KeyManagement.KeyGenerators
         /// </summary>
         private static string ExportPublicKeyPem(RsaKeyParameters publicKeyParams)
         {
-            // 使用 SubjectPublicKeyInfoFactory 建立 SubjectPublicKeyInfo 結構
             var pubInfo = SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(publicKeyParams);
 
             using (var stringWriter = new StringWriter())
             {
                 var pemWriter = new Org.BouncyCastle.OpenSsl.PemWriter(stringWriter);
-                // 將 SubjectPublicKeyInfo 物件的編碼內容包裝成 PemObject 寫入
                 pemWriter.WriteObject(new PemObject("PUBLIC KEY", pubInfo.GetEncoded()));
                 return stringWriter.ToString();
             }

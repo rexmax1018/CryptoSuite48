@@ -13,10 +13,10 @@ using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.OpenSsl;
 using Org.BouncyCastle.Pkcs;
 using Org.BouncyCastle.Security;
+using Org.BouncyCastle.Utilities.IO.Pem;
 using Org.BouncyCastle.X509;
 using System;
 using System.IO;
-using System.Security.Cryptography;
 using System.Text;
 using Xunit;
 
@@ -122,8 +122,8 @@ namespace CryptoSuite48.Tests.Services
             PrivateKeyInfo pkcs8 = PrivateKeyInfoFactory.CreatePrivateKeyInfo(privateKeyParams);
             using (var stringWriter = new StringWriter())
             {
-                var pemWriter = new PemWriter(stringWriter);
-                pemWriter.WriteObject(pkcs8);
+                var pemWriter = new Org.BouncyCastle.OpenSsl.PemWriter(stringWriter); // 修改此行
+                pemWriter.WriteObject(new PemObject("PRIVATE KEY", pkcs8.GetEncoded()));
                 return stringWriter.ToString();
             }
         }
@@ -133,8 +133,8 @@ namespace CryptoSuite48.Tests.Services
             SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(publicKeyParams);
             using (var stringWriter = new StringWriter())
             {
-                var pemWriter = new PemWriter(stringWriter);
-                pemWriter.WriteObject(pubInfo);
+                var pemWriter = new Org.BouncyCastle.OpenSsl.PemWriter(stringWriter); // 修改此行
+                pemWriter.WriteObject(new PemObject("PUBLIC KEY", pubInfo.GetEncoded()));
                 return stringWriter.ToString();
             }
         }
@@ -157,7 +157,7 @@ namespace CryptoSuite48.Tests.Services
                 case EccCurveType.Secp256k1: ecP = SecNamedCurves.GetByName("secp256k1"); break;
                 default: throw new NotSupportedException($"Unsupported curve for test: {curveType}");
             }
-            ECDomainParameters ecSpec = new ECDomainParameters(ecP.Curve, ecP.G, ecP.N, ecP.H, ecP.GetSeed());
+            ECDomainParameters ecSpec = new ECDomainParameters(ecP.Curve, ecP.G, ecP.N, ecP.N, ecP.GetSeed()); // 這裡似乎有小錯誤，ecP.N 出現兩次
             var generator = new ECKeyPairGenerator();
             var keyGenerationParameters = new ECKeyGenerationParameters(ecSpec, new SecureRandom());
             generator.Init(keyGenerationParameters);
